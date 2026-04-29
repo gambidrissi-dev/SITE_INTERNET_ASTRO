@@ -1,0 +1,254 @@
+---
+// Base.astro — layout général pour toutes les inner pages
+// Inclut head, nav, overlay, cursor, footer, scripts client.
+
+import Nav from '../components/Nav.astro';
+import NavOverlay from '../components/NavOverlay.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Slug page courante : "studio", "atelier-projets", "journal", etc. */
+  current?: string;
+  /** og:image absolue (par défaut og-image générale) */
+  ogImage?: string;
+  /** path canonique (auto-déduit sinon) */
+  canonical?: string;
+}
+
+const {
+  title,
+  description = "Collectif Cobalt — Studio de design d'espace, atelier et média en Nouvelle-Aquitaine.",
+  current = '',
+  ogImage = '/assets/OG-image/og-image.jpg',
+  canonical,
+} = Astro.props;
+
+const siteUrl = 'https://astro.collectifcobalt.eu';
+const canonicalUrl = canonical ?? `${siteUrl}${Astro.url.pathname}`;
+const ogImageAbs = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`;
+---
+
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#F3EFD7" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23F3EFD7'/><text x='4' y='24' font-size='22' font-family='sans-serif' font-weight='900' fill='%234A82DC'>c.</text></svg>"
+    />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageAbs} />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content="Collectif Cobalt" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageAbs} />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;0,9..40,800;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <slot name="head" />
+  </head>
+  <body>
+    <div class="stripe"></div>
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+
+    <Nav />
+    <NavOverlay current={current} />
+
+    <div id="main-content" tabindex="-1" style="position:absolute;top:62px;left:0;width:1px;height:1px;overflow:hidden;pointer-events:none;"></div>
+
+    <slot />
+
+    <Footer />
+
+    <script>
+      /* ═════════════════════════════════════════════════
+         CURSOR (desktop uniquement)
+      ═════════════════════════════════════════════════ */
+      const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+      if (!isTouch) {
+        const dot = document.getElementById('cursor-dot') as HTMLElement | null;
+        const ring = document.getElementById('cursor-ring') as HTMLElement | null;
+        if (dot && ring) {
+          let mx = 0, my = 0, rx = 0, ry = 0;
+          let lastBgType = 'cream';
+
+          function getBgUnderCursor(x: number, y: number): string | null {
+            dot!.style.display = 'none';
+            ring!.style.display = 'none';
+            const el = document.elementFromPoint(x, y);
+            dot!.style.display = '';
+            ring!.style.display = '';
+            if (!el) return null;
+            let node: Element | null = el;
+            while (node && node !== document.documentElement) {
+              const bg = getComputedStyle(node).backgroundColor;
+              if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
+              node = node.parentElement;
+            }
+            return getComputedStyle(document.body).backgroundColor;
+          }
+
+          function classifyBg(rgb: string | null): 'cream' | 'noir' | 'bleu' {
+            if (!rgb) return 'cream';
+            const m = rgb.match(/\d+/g);
+            if (!m || m.length < 3) return 'cream';
+            const [r, g, b] = m.map(Number);
+            if (b > 140 && b > r + 50 && b > g + 50) return 'bleu';
+            if (0.299 * r + 0.587 * g + 0.114 * b < 80) return 'noir';
+            return 'cream';
+          }
+
+          function applyCursorColor(bgType: 'cream' | 'noir' | 'bleu') {
+            if (bgType === 'noir') {
+              dot!.style.background = '#ffffff';
+              ring!.style.borderColor = 'rgba(255,255,255,0.6)';
+            } else if (bgType === 'bleu') {
+              dot!.style.background = '#1a1a1a';
+              ring!.style.borderColor = 'rgba(26,26,26,0.6)';
+            } else {
+              dot!.style.background = '#4A82DC';
+              ring!.style.borderColor = 'rgba(74,130,220,0.55)';
+            }
+          }
+
+          applyCursorColor('cream');
+
+          document.addEventListener('mousemove', (e) => {
+            mx = e.clientX; my = e.clientY;
+            const bg = getBgUnderCursor(mx, my);
+            const bgType = classifyBg(bg);
+            if (bgType !== lastBgType) {
+              lastBgType = bgType;
+              applyCursorColor(bgType);
+            }
+          });
+
+          (function animCursor() {
+            dot!.style.left = mx + 'px'; dot!.style.top = my + 'px';
+            rx += (mx - rx) * 0.13; ry += (my - ry) * 0.13;
+            ring!.style.left = rx + 'px'; ring!.style.top = ry + 'px';
+            requestAnimationFrame(animCursor);
+          })();
+
+          document.querySelectorAll('a, button, .proj-card, .cfg-opt, .cp-col, .cp-main-link').forEach((el) => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('hov'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('hov'));
+          });
+        }
+      } else {
+        document.getElementById('cursor-dot')?.remove();
+        document.getElementById('cursor-ring')?.remove();
+      }
+
+      /* ═════════════════════════════════════════════════
+         OVERLAY — binding events seulement (HTML déjà rendu)
+      ═════════════════════════════════════════════════ */
+      (function setupOverlay() {
+        const overlay = document.getElementById('lg-overlay');
+        const burgerBtn = document.getElementById('nav-burger');
+        if (!overlay || !burgerBtn) return;
+
+        const getFocusable = () =>
+          [...overlay.querySelectorAll('a[href], button:not([disabled]), [tabindex="0"]')] as HTMLElement[];
+
+        const open = () => {
+          overlay.classList.add('open');
+          burgerBtn.classList.add('open');
+          burgerBtn.setAttribute('aria-expanded', 'true');
+          document.body.style.overflow = 'hidden';
+          setTimeout(() => { const els = getFocusable(); if (els.length) els[0].focus(); }, 60);
+        };
+
+        const close = () => {
+          overlay.classList.remove('open');
+          burgerBtn.classList.remove('open');
+          burgerBtn.setAttribute('aria-expanded', 'false');
+          document.body.style.overflow = '';
+          burgerBtn.focus();
+        };
+
+        burgerBtn.addEventListener('click', () => {
+          overlay.classList.contains('open') ? close() : open();
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && overlay.classList.contains('open')) { close(); return; }
+          if (e.key === 'Tab' && overlay.classList.contains('open')) {
+            const els = getFocusable();
+            if (!els.length) return;
+            const first = els[0], last = els[els.length - 1];
+            if (e.shiftKey) {
+              if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+            } else {
+              if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+          }
+        });
+      })();
+
+      /* ═════════════════════════════════════════════════
+         SCROLL REVEAL + STATS COUNTER
+      ═════════════════════════════════════════════════ */
+      const srObs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add('in');
+              srObs.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.08 }
+      );
+      document.querySelectorAll('.sr').forEach((el) => srObs.observe(el));
+
+      const statObs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (!e.isIntersecting) return;
+            const el = e.target as HTMLElement;
+            const target = +(el.dataset.target ?? '0');
+            const dur = target > 100 ? 1600 : 800;
+            const start = performance.now();
+            (function tick(now) {
+              const p = Math.min((now - start) / dur, 1);
+              const ease = 1 - Math.pow(1 - p, 3);
+              el.textContent = String(Math.round(ease * target));
+              if (p < 1) requestAnimationFrame(tick);
+            })(performance.now());
+            statObs.unobserve(el);
+          });
+        },
+        { threshold: 0.5 }
+      );
+      document.querySelectorAll('[data-target]').forEach((el) => statObs.observe(el));
+    </script>
+  </body>
+</html>

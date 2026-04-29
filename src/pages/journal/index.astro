@@ -1,0 +1,83 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+const articles = (await getCollection('journal', ({ data }) => data.publie))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const fmt = (d: Date) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+---
+
+<Base title="Journal — Le Média — Collectif Cobalt" current="journal">
+  <section class="page-hero">
+    <div class="hero-bg-num" aria-hidden="true">04</div>
+    <div class="s-label">Le Média</div>
+    <h1 class="page-title">JOURNAL.</h1>
+    <p class="page-desc">Articles, comptes rendus, conversations — par le Collectif Cobalt.</p>
+  </section>
+
+  <section class="journal-list">
+    {articles.map((a) => (
+      <a href={`/journal/${a.slug}`} class="article-row">
+        {a.data.couverture && (
+          <div class="article-img">
+            <img src={a.data.couverture} alt={a.data.title} loading="lazy" />
+          </div>
+        )}
+        <div class="article-body">
+          <div class="article-meta">
+            {a.data.serie && <span class="article-serie">{a.data.serie}</span>}
+            <span>{fmt(a.data.date)}</span>
+            <span>· {a.data.lecture}</span>
+            <span>· par {a.data.auteur}</span>
+          </div>
+          <h2 class="article-title">{a.data.title}</h2>
+          <p class="article-excerpt">{a.data.excerpt}</p>
+          <div class="article-tags">
+            {a.data.tags.map((t) => <span class="tag">#{t}</span>)}
+          </div>
+        </div>
+      </a>
+    ))}
+  </section>
+</Base>
+
+<style is:global>
+  .journal-list { padding: 60px 44px; max-width: 980px; margin: 0 auto; }
+  .article-row {
+    display: grid; grid-template-columns: 280px 1fr; gap: 32px;
+    padding: 36px 0; border-bottom: 1px solid rgba(26,26,26,.1);
+    transition: opacity .15s;
+  }
+  .article-row:first-child { border-top: 1px solid rgba(26,26,26,.1); }
+  .article-row:hover { opacity: .7; }
+  .article-img { aspect-ratio: 4/3; overflow: hidden; border-radius: var(--r-sm); background: var(--cream-2, #ECE6C8); }
+  .article-img img { width: 100%; height: 100%; object-fit: cover; }
+  .article-meta {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
+    font-size: .65rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(26,26,26,.55);
+  }
+  .article-serie {
+    color: var(--rouge, #BB3B34); font-weight: 800;
+  }
+  .article-title {
+    font-family: var(--f-display); font-size: clamp(1.6rem, 3vw, 2.2rem);
+    line-height: 1.05; margin-bottom: 14px;
+  }
+  .article-excerpt {
+    font-size: 1rem; line-height: 1.65; color: rgba(26,26,26,.7);
+    font-weight: 300; margin-bottom: 14px;
+  }
+  .article-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag {
+    font-size: .62rem; font-weight: 600; letter-spacing: .05em;
+    color: var(--bleu);
+  }
+
+  @media (max-width: 720px) {
+    .article-row { grid-template-columns: 1fr; gap: 18px; }
+    .article-img { aspect-ratio: 16/9; }
+    .journal-list { padding: 40px 20px; }
+  }
+</style>

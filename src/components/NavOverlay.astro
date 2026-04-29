@@ -1,0 +1,112 @@
+---
+// NavOverlay — overlay liquid glass rendu côté serveur (HTML dans le DOM initial)
+// Différence avec shared.js : ici l'overlay existe déjà dans le HTML, le script
+// se contente de binder les events. Meilleur pour le SEO (le menu est crawlable).
+
+interface Props {
+  /** Slug de la page courante pour marquer la strip active. Ex: "studio", "atelier-projets" */
+  current?: string;
+}
+
+const { current = '' } = Astro.props;
+
+// Mapping page → environnement (pour la classe .active)
+const pageToEnv: Record<string, string> = {
+  'studio': 'e1', 'projets': 'e1', 'services': 'e1',
+  'atelier': 'e2', 'atelier-projets': 'e2',
+  'atelier-services': 'e2', 'atelier-drops': 'e2',
+  'bleu-de-cobalt': 'e3', 'bleu-programme': 'e3', 'bleu-cabinets': 'e3',
+  'bleu-particuliers': 'e3', 'bleu-projets': 'e3',
+  'media': 'e4', 'media-journal': 'e4',
+  'journal': 'e4', 'drops': 'e2',
+};
+const activeEnv = pageToEnv[current] ?? '';
+---
+
+<div id="lg-overlay" role="dialog" aria-modal="true" aria-label="Navigation">
+  <div class="lg-header">
+    <div class="lg-logo">
+      <img src="/assets/LOGO/LOGO_COBALT.svg" alt="Collectif Cobalt" style="height:18px;width:auto;opacity:.65;display:block;filter:invert(1);" />
+    </div>
+    <div class="lg-esc">Échap pour fermer</div>
+  </div>
+  <div class="lg-strips">
+
+    <div class={`lg-strip e1${activeEnv === 'e1' ? ' active' : ''}`}>
+      <div class="lg-strip-ghost">01</div>
+      <a href="/studio" class="lg-strip-primary">
+        <div class="lg-strip-num">01</div>
+        <div class="lg-strip-body">
+          <div class="lg-strip-name">Le Studio</div>
+          <div class="lg-strip-sub">Architecture & Design d'espace</div>
+        </div>
+        <div class="lg-strip-arrow">→</div>
+      </a>
+      <div class="lg-strip-links">
+        <a href="/studio" class="lg-strip-link">Présentation</a>
+        <a href="/projets" class="lg-strip-link">Projets</a>
+        <a href="/services" class="lg-strip-link">Services</a>
+      </div>
+    </div>
+
+    <div class={`lg-strip e2${activeEnv === 'e2' ? ' active' : ''}`}>
+      <div class="lg-strip-ghost">02</div>
+      <a href="/atelier" class="lg-strip-primary">
+        <div class="lg-strip-num">02</div>
+        <div class="lg-strip-body">
+          <div class="lg-strip-name">L'Atelier</div>
+          <div class="lg-strip-sub">Fabrication & Prototypage</div>
+        </div>
+        <div class="lg-strip-arrow">→</div>
+      </a>
+      <div class="lg-strip-links">
+        <a href="/atelier" class="lg-strip-link">Présentation</a>
+        <a href="/drops" class="lg-strip-link">Drops</a>
+        <a href="/atelier-services" class="lg-strip-link">Services</a>
+        <a href="/atelier-projets" class="lg-strip-link">Projets</a>
+      </div>
+    </div>
+
+    <div class={`lg-strip e3${activeEnv === 'e3' ? ' active' : ''}`}>
+      <div class="lg-strip-ghost">03</div>
+      <a href="/bleu-de-cobalt" class="lg-strip-primary">
+        <div class="lg-strip-num">03</div>
+        <div class="lg-strip-body">
+          <div class="lg-strip-name">Bleu de Cobalt</div>
+          <div class="lg-strip-sub">Programme & Cabinets partenaires</div>
+        </div>
+        <div class="lg-strip-arrow">→</div>
+      </a>
+      <div class="lg-strip-links">
+        <a href="/bleu-de-cobalt" class="lg-strip-link">Présentation</a>
+        <a href="/bleu-programme" class="lg-strip-link">Programme</a>
+        <a href="/bleu-cabinets" class="lg-strip-link">Cabinets</a>
+        <a href="/bleu-particuliers" class="lg-strip-link">Particuliers</a>
+      </div>
+    </div>
+
+    <div class={`lg-strip e4${activeEnv === 'e4' ? ' active' : ''}`}>
+      <div class="lg-strip-ghost">04</div>
+      <a href="/media" class="lg-strip-primary">
+        <div class="lg-strip-num">04</div>
+        <div class="lg-strip-body">
+          <div class="lg-strip-name">Le Média</div>
+          <div class="lg-strip-sub">Architalk & Journal</div>
+        </div>
+        <div class="lg-strip-arrow">→</div>
+      </a>
+      <div class="lg-strip-links">
+        <a href="/media" class="lg-strip-link">Présentation</a>
+        <a href="/journal" class="lg-strip-link">Journal</a>
+      </div>
+    </div>
+
+  </div>
+  <div class="lg-overlay-footer">
+    <a href="/contact" class="lg-footer-contact">Contact</a>
+    <div class="lg-footer-socials">
+      <a href="https://www.instagram.com/collectifcobalt" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://www.linkedin.com/company/collectif-cobalt" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+  </div>
+</div>

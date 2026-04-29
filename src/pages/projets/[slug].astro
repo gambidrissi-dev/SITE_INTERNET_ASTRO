@@ -1,0 +1,111 @@
+---
+import { getCollection } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+
+export const getStaticPaths = (async () => {
+  const projets = await getCollection('projets', ({ data }) => data.publie);
+  return projets.map((p) => ({
+    params: { slug: p.slug },
+    props: { entry: p },
+  }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+const d = entry.data;
+---
+
+<Base
+  title={`${d.title} — Projets — Collectif Cobalt`}
+  description={d.excerpt}
+  current="projets"
+  ogImage={d.couverture}
+>
+  <article class="projet-page">
+    <header class="projet-hero">
+      <a href="/projets" class="projet-back">← Tous les projets</a>
+      <div class="projet-info">
+        <span>{d.lieu}</span>
+        {d.surface && <span>· {d.surface}</span>}
+        <span>· {d.annee}</span>
+        <span class={`badge badge-${d.statut === 'livré' ? 'livré' : 'cours'}`}>{d.statut}</span>
+      </div>
+      <h1 class="projet-title">{d.title}.</h1>
+      <p class="projet-excerpt">{d.excerpt}</p>
+    </header>
+
+    <figure class="projet-cover">
+      <img src={d.couverture} alt={d.title} />
+    </figure>
+
+    <div class="projet-body prose">
+      <Content />
+    </div>
+
+    {d.galerie.length > 0 && (
+      <section class="projet-galerie">
+        <h2>Galerie</h2>
+        <div class="galerie-grid">
+          {d.galerie.map((img) => (
+            <img src={img} alt="" loading="lazy" />
+          ))}
+        </div>
+      </section>
+    )}
+
+    <footer class="projet-footer">
+      <a href="/projets" class="btn btn-cream"><span>← Voir tous les projets</span></a>
+    </footer>
+  </article>
+</Base>
+
+<style is:global>
+  .projet-page { max-width: 920px; margin: 0 auto; padding: 110px 24px 80px; }
+  .projet-back {
+    font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--bleu); margin-bottom: 28px; display: inline-block;
+  }
+  .projet-info {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;
+    font-size: .65rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(26,26,26,.55);
+  }
+  .projet-title {
+    font-family: var(--f-display);
+    font-size: clamp(48px, 7vw, 88px);
+    line-height: .9; margin-bottom: 24px;
+  }
+  .projet-excerpt {
+    font-family: var(--f-serif); font-style: italic;
+    font-size: 1.4rem; line-height: 1.45; color: rgba(26,26,26,.7);
+    max-width: 720px; margin-bottom: 56px;
+  }
+  .projet-cover {
+    margin: 0 0 64px;
+    border-radius: var(--r-md); overflow: hidden;
+  }
+  .projet-cover img { width: 100%; height: auto; display: block; }
+
+  .prose { max-width: 720px; margin: 0 auto; }
+  .prose h2 { font-family: var(--f-display); font-size: 2rem; margin: 56px 0 20px; line-height: 1; }
+  .prose h3 { font-family: var(--f-display); font-size: 1.4rem; margin: 36px 0 14px; }
+  .prose p { font-size: 1.05rem; line-height: 1.8; margin-bottom: 22px; color: rgba(26,26,26,.78); font-weight: 300; }
+  .prose blockquote {
+    border-left: 3px solid var(--bleu); padding: 8px 24px;
+    margin: 36px 0; font-family: var(--f-serif); font-style: italic;
+    font-size: 1.2rem; line-height: 1.55; color: rgba(26,26,26,.7);
+  }
+  .prose ul, .prose ol { padding-left: 24px; margin-bottom: 22px; }
+  .prose li { font-size: 1rem; line-height: 1.75; margin-bottom: 8px; font-weight: 300; }
+
+  .projet-galerie { margin-top: 72px; }
+  .projet-galerie h2 { font-family: var(--f-display); font-size: 2rem; margin-bottom: 24px; }
+  .galerie-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .galerie-grid img { width: 100%; height: auto; border-radius: var(--r-sm); display: block; }
+
+  .projet-footer { margin-top: 80px; text-align: center; }
+</style>

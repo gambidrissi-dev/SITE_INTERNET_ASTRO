@@ -1,0 +1,69 @@
+---
+import { getCollection } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+
+export const getStaticPaths = (async () => {
+  const drops = await getCollection('drops', ({ data }) => data.publie);
+  return drops.map((d) => ({ params: { slug: d.slug }, props: { entry: d } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+const d = entry.data;
+const fmt = d.date_drop.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+---
+
+<Base
+  title={`${d.title} — Drops — Collectif Cobalt`}
+  description={d.excerpt}
+  current="drops"
+  ogImage={d.couverture}
+>
+  <article class="drop-page">
+    <header class="drop-page-hero">
+      <a href="/drops" class="projet-back">← Tous les drops</a>
+      {d.serie && <div class="drop-serie">{d.serie}</div>}
+      <h1 class="projet-title">{d.title}</h1>
+      <p class="projet-excerpt">{d.excerpt}</p>
+      <div class="drop-page-info">
+        <span>{fmt}</span>
+        {d.edition && <span>· {d.edition}</span>}
+        {d.materiau.length > 0 && <span>· {d.materiau.join(' / ')}</span>}
+        {d.prix && <span class="drop-price">{d.prix}</span>}
+      </div>
+    </header>
+
+    <figure class="drop-cover">
+      <img src={d.couverture} alt={d.title} />
+    </figure>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    {d.lien_video && (
+      <p style="text-align:center; margin-top:48px">
+        <a href={d.lien_video} class="btn btn-cream" target="_blank" rel="noopener"><span>Voir la vidéo →</span></a>
+      </p>
+    )}
+  </article>
+</Base>
+
+<style is:global>
+  .drop-page { max-width: 920px; margin: 0 auto; padding: 110px 24px 80px; }
+  .drop-page-hero { margin-bottom: 56px; }
+  .drop-page-info {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(26,26,26,.55); margin-top: 18px;
+  }
+  .drop-price { color: var(--bleu); font-weight: 700; }
+  .drop-cover {
+    margin: 0 0 56px; padding: 80px;
+    background: var(--cream-2, #ECE6C8);
+    border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .drop-cover img { max-width: 60%; max-height: 400px; }
+</style>
